@@ -1,0 +1,38 @@
+{
+  "name": "@chaospad/releaser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/conventional-changelog": "^3.1.1",
+    "@types/conventional-recommended-bump": "^6.1.0",
+    "@types/luxon": "^2.3.0",
+    "@vercel/ncc": "^0.33.3",
+    "typescript": "^4.6.2"
+  },
+  "author": {
+    "name": "Rabyâ Raghib",
+    "email": "rabraghib@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chaospad/releaser/issues"
+  },
+  "homepage": "https://github.com/chaospad/releaser#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chaospad/releaser.git"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/exec": "^1.1.0",
+    "@actions/glob": "^0.2.0",
+    "conventional-changelog": "^3.1.25",
+    "conventional-recommended-bump": "^6.1.0",
+    "luxon": "^2.3.1"
+  }
+}

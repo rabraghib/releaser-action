@@ -1,0 +1,59 @@
+name: "Chaospad Releaser"
+description: ""
+inputs:
+  github-token:
+    description: "Github token"
+    required: false
+
+  version:
+    description: "The version to release (accepts including var. e.g '{major}.{minor}.{patch}')"
+    required: false
+    default: "{major}.{minor}.{patch}"
+
+  skip-git-pull:
+    description: "Do not pull the repo before tagging. Ensure you full cloned the repo in the first place to get tags"
+    required: false
+    default: "false"
+
+  version-file:
+    description: "The file containing the version number"
+    required: false
+    default: "package.json"
+
+  bump-files:
+    description: "The file paths/glob-patterns to bump"
+    required: false
+    default: "package.json"
+
+  output-file:
+    description: "File to output the changelog to"
+    default: "CHANGELOG.md"
+    required: false
+
+  tag-prefix:
+    description: "The prefix of the tag to release"
+    required: false
+    default: "v"
+
+  release-count:
+    description: "The number of releases to create"
+    required: false
+    default: "0"
+
+  birthday:
+    description: "The date that will be used to calculate 'years', 'months' and 'days' variables. format 'YYYY-MM-DD'"
+    required: false
+
+outputs:
+  tag:
+    description: "The name of the created tag"
+  release_notes:
+    description: "The release notes"
+  version: # id of output
+    description: "The version we greeted you"
+  released:
+    description: "boolean to check if this step have been skipped"
+
+runs:
+  using: "node16"
+  main: "dist/index.js"
