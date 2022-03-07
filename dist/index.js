@@ -62677,7 +62677,6 @@ function prepareVars(version, type) {
         months: (_b = age.months) !== null && _b !== void 0 ? _b : 0,
         days: (_c = age.days) !== null && _c !== void 0 ? _c : 0,
     };
-    screen;
     switch (type) {
         case "major":
             vars.major += 1;
