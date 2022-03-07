@@ -11,7 +11,7 @@ import {
 import { Git } from "./helpers/git";
 
 // @ts-ignore
-import * as config from "conventional-changelog-angular";
+import configAngular from "conventional-changelog-angular";
 
 const { GITHUB_REPOSITORY } = process.env;
 
@@ -50,14 +50,16 @@ async function run() {
   const releaseCount = parseInt(core.getInput("release-count")) ?? 0;
   const birthday = core.getInput("birthday");
 
+  const config = await configAngular;
+
   core.setSecret(githubToken);
 
   // const gitUserName = core.getInput("git-user-name");
   // const gitUserEmail = core.getInput("git-user-email");
   const git = new Git("github-actions", "github-actions@github.com");
-  git.updateOrigin(
-    `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
-  );
+  // git.updateOrigin(
+  //   `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
+  // );
   // pull git history
   await git.pull();
 
