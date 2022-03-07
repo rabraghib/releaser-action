@@ -10,10 +10,10 @@ inputs:
     required: false
     default: "{major}.{minor}.{patch}"
 
-  skip-git-pull:
-    description: "Do not pull the repo before tagging. Ensure you full cloned the repo in the first place to get tags"
+  skip-on-empty:
+    description: "Do nothing when the changelog from the latest release is empty"
     required: false
-    default: "false"
+    default: "true"
 
   version-file:
     description: "The file containing the version number"

@@ -11,23 +11,24 @@ jobs:
 
       - run: yarn && yarn build
 
-      - id: changelog
+      - name: This action
+        id: changelog
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Dump output
         run: |
-          echo "{{ steps.changelog.outputs.tag }}"
-          echo "{{ steps.changelog.outputs.release_notes }}"
-          echo "{{ steps.changelog.outputs.version }}"
-          echo "{{ steps.changelog.outputs.released }}"
+          echo "${{ steps.changelog.outputs.tag }}"
+          echo "${{ steps.changelog.outputs.release_notes }}"
+          echo "${{ steps.changelog.outputs.version }}"
+          echo "${{ steps.changelog.outputs.released }}"
 
       - name: Its not released
         if: ${{ !steps.changelog.outputs.released }}
         run: |
-          echo "{{ steps.changelog.outputs.released }}"
+          echo "${{ steps.changelog.outputs.released }}"
       - name: Its released
-        if: steps.changelog.outputs.released
+        if: ${{ steps.changelog.outputs.released }}
         run: |
-          echo "{{ steps.changelog.outputs.released }}"
+          echo "${{ steps.changelog.outputs.released }}"

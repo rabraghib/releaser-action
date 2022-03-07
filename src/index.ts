@@ -1,5 +1,5 @@
-import core from "@actions/core";
-import glob from "@actions/glob";
+import * as core from "@actions/core";
+import * as glob from "@actions/glob";
 import { getNextVersion } from "./helpers/next-version";
 import conventionalRecommendedBump from "conventional-recommended-bump";
 import { FsAdapters } from "./helpers/files-adapters";
@@ -37,13 +37,13 @@ async function getFiles(): Promise<string[]> {
 async function run() {
   const githubToken = core.getInput("github-token");
   const version = core.getInput("version");
-  const tagPrefix = core.getInput("tag-prefix");
-  const releaseCount = parseInt(core.getInput("release-count")) ?? 0;
+  const skipEmptyRelease =
+    core.getInput("skip-on-empty").toLowerCase() === "true";
   const versionFile = core.getInput("version-file").trim();
   const files = await getFiles();
   const outputFile = core.getInput("output-file");
-  const skipEmptyRelease =
-    core.getInput("skip-on-empty").toLowerCase() === "true";
+  const tagPrefix = core.getInput("tag-prefix");
+  const releaseCount = parseInt(core.getInput("release-count")) ?? 0;
   const preset = "angular";
   const birthday = core.getInput("birthday");
 

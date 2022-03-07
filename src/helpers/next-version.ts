@@ -46,7 +46,6 @@ function prepareVars(version: IVersion, type?: string) {
     months: age.months ?? 0,
     days: age.days ?? 0,
   };
-  screen;
   switch (type) {
     case "major":
       vars.major += 1;
