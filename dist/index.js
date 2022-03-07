@@ -293,7 +293,7 @@ const pumb_version_1 = __nccwpck_require__(6363);
 const generate_changelog_1 = __nccwpck_require__(3485);
 const git_1 = __nccwpck_require__(7052);
 // @ts-ignore
-const config = __importStar(__nccwpck_require__(8143));
+const conventional_changelog_angular_1 = __importDefault(__nccwpck_require__(8143));
 const { GITHUB_REPOSITORY } = process.env;
 try {
     run();
@@ -330,11 +330,14 @@ function run() {
         const tagPrefix = core.getInput("tag-prefix");
         const releaseCount = (_a = parseInt(core.getInput("release-count"))) !== null && _a !== void 0 ? _a : 0;
         const birthday = core.getInput("birthday");
+        const config = yield conventional_changelog_angular_1.default;
         core.setSecret(githubToken);
         // const gitUserName = core.getInput("git-user-name");
         // const gitUserEmail = core.getInput("git-user-email");
         const git = new git_1.Git("github-actions", "github-actions@github.com");
-        git.updateOrigin(`https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`);
+        // git.updateOrigin(
+        //   `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
+        // );
         // pull git history
         yield git.pull();
         (0, conventional_recommended_bump_1.default)({ config, tagPrefix }, (error, recommendation) => __awaiter(this, void 0, void 0, function* () {
