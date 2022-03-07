@@ -62543,7 +62543,6 @@ const generateChangelogStream = (tagPrefix, version, releaseCount) => (0, conven
     tagPrefix,
 }, {
     version,
-    title: `${tagPrefix}${version}`,
 });
 const generateChangelogFile = (tagPrefix, version, releaseCount, path) => new Promise((resolve) => {
     const changelogStream = generateChangelogStream(tagPrefix, version, releaseCount);
