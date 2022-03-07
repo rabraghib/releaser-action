@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build --license licenses.txt src/index.ts",
+    "build": "tsc && ncc build --license licenses.txt lib/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
@@ -32,6 +32,7 @@
     "@actions/exec": "^1.1.0",
     "@actions/glob": "^0.2.0",
     "conventional-changelog": "^3.1.25",
+    "conventional-changelog-angular": "^5.0.13",
     "conventional-recommended-bump": "^6.1.0",
     "luxon": "^2.3.1"
   }

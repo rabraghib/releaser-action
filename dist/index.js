@@ -1,6 +1,409 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 7333:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FsAdapters = void 0;
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+exports.FsAdapters = {
+    json: new (class {
+        readVersion(file) {
+            return this.read(file).version;
+        }
+        updateVersion(file, version) {
+            const data = this.read(file);
+            data.version = version;
+            this.write(file, data);
+        }
+        read(file) {
+            return JSON.parse(fs_1.default.readFileSync(file, "utf8"));
+        }
+        write(file, data) {
+            fs_1.default.writeFileSync(file, JSON.stringify(data, null, 2));
+        }
+    })(),
+};
+
+
+/***/ }),
+
+/***/ 3485:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.generateChangelogString = exports.generateChangelogFile = void 0;
+const conventional_changelog_1 = __importDefault(__nccwpck_require__(9461));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const generateChangelogStream = (tagPrefix, version, releaseCount, config) => (0, conventional_changelog_1.default)({
+    config,
+    releaseCount,
+    tagPrefix,
+}, {
+    version,
+});
+const generateChangelogFile = (tagPrefix, version, releaseCount, path, config) => new Promise((resolve) => {
+    const changelogStream = generateChangelogStream(tagPrefix, version, releaseCount, config);
+    changelogStream.pipe(fs_1.default.createWriteStream(path)).on("finish", resolve);
+});
+exports.generateChangelogFile = generateChangelogFile;
+const generateChangelogString = (tagPrefix, version, releaseCount, config) => new Promise((resolve, reject) => {
+    const changelogStream = generateChangelogStream(tagPrefix, version, releaseCount, config);
+    let changelog = "";
+    changelogStream
+        .on("data", (data) => {
+        changelog += data.toString();
+    })
+        .on("end", () => resolve(changelog));
+});
+exports.generateChangelogString = generateChangelogString;
+
+
+/***/ }),
+
+/***/ 7052:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Git = void 0;
+const exec_1 = __nccwpck_require__(1514);
+const { GITHUB_REF } = process.env;
+const branch = GITHUB_REF === null || GITHUB_REF === void 0 ? void 0 : GITHUB_REF.replace("refs/heads/", "");
+class Git {
+    constructor(gitUserName, gitUserEmail) {
+        this.commandsRun = [];
+        this.exec = (command) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            let execOutput = "";
+            const options = {
+                listeners: {
+                    stdout: (data) => {
+                        execOutput += data.toString();
+                    },
+                },
+            };
+            const exitCode = yield (0, exec_1.exec)(`git ${command}`, undefined, options);
+            if (exitCode === 0) {
+                resolve(execOutput);
+            }
+            else {
+                reject(`Command "git ${command}" exited with code ${exitCode}.`);
+            }
+        }));
+        this.config = (key, value) => this.exec(`config ${key} "${value}"`);
+        this.add = (file) => this.exec(`add ${file}`);
+        this.commit = (message) => this.exec(`commit -m "${message}"`);
+        this.pull = () => __awaiter(this, void 0, void 0, function* () {
+            const args = ["pull"];
+            // Check if the repo is unshallow
+            if (yield this.isShallow()) {
+                args.push("--unshallow");
+            }
+            args.push("--tags");
+            args.push("--ff-only");
+            return this.exec(args.join(" "));
+        });
+        this.push = () => this.exec(`push origin ${branch} --follow-tags`);
+        this.isShallow = () => __awaiter(this, void 0, void 0, function* () {
+            const isShallow = yield this.exec("rev-parse --is-shallow-repository");
+            return isShallow.trim().replace("\n", "") === "true";
+        });
+        this.updateOrigin = (repo) => this.exec(`remote set-url origin ${repo}`);
+        this.createTag = (tag) => this.exec(`tag -a ${tag} -m "${tag}"`);
+        // Set config
+        this.config("user.name", gitUserName);
+        this.config("user.email", gitUserEmail);
+    }
+}
+exports.Git = Git;
+
+
+/***/ }),
+
+/***/ 2302:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getNextVersion = void 0;
+const luxon_1 = __nccwpck_require__(8811);
+const getNextVersion = (version, type) => {
+    const variables = prepareVars(version, type);
+    variables["bump"] = getBump(version, variables);
+    return version.pattern.replace(/\{(.*?)\}/g, (match, p1) => {
+        var _a;
+        return `${(_a = variables[p1]) !== null && _a !== void 0 ? _a : 0}`;
+    });
+};
+exports.getNextVersion = getNextVersion;
+function getBump(version, vars) {
+    const rest = version.pattern
+        .split(".")
+        .map((v) => {
+        if (v.startsWith("{") && v.endsWith("}")) {
+            return v.slice(1, -1);
+        }
+        return "";
+    })
+        .some((v) => {
+        return vars[v] !== getVarValue(version, v);
+    });
+    return rest ? 0 : getVarValue(version, "bump") + 1;
+}
+function prepareVars(version, type) {
+    var _a, _b, _c;
+    const age = luxon_1.DateTime.now()
+        .diff(luxon_1.DateTime.fromISO(version.birthday), ["years", "months", "days"])
+        .toObject();
+    const vars = {
+        major: getVarValue(version, "major"),
+        minor: getVarValue(version, "minor"),
+        patch: getVarValue(version, "minor"),
+        years: (_a = age.years) !== null && _a !== void 0 ? _a : 0,
+        months: (_b = age.months) !== null && _b !== void 0 ? _b : 0,
+        days: (_c = age.days) !== null && _c !== void 0 ? _c : 0,
+    };
+    switch (type) {
+        case "major":
+            vars.major += 1;
+            vars.minor = 0;
+            vars.patch = 0;
+            break;
+        case "minor":
+            vars.minor += 1;
+            vars.patch = 0;
+            break;
+        default:
+            vars.patch += 1;
+    }
+    return vars;
+}
+function getVarValue(version, name) {
+    const values = version.curr.split(".").map(Number);
+    const vars = version.pattern.split(".").map((v) => {
+        if (v.startsWith("{") && v.endsWith("}")) {
+            return v.slice(1, -1);
+        }
+        return "-";
+    });
+    return values[vars.findIndex((v) => v === name)];
+}
+
+
+/***/ }),
+
+/***/ 6363:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.bumpVersion = void 0;
+const files_adapters_1 = __nccwpck_require__(7333);
+const bumpVersion = (files, opts) => __awaiter(void 0, void 0, void 0, function* () {
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExtension = file.split(".").pop();
+        files_adapters_1.FsAdapters[fileExtension].updateVersion(file, opts.version);
+    }
+});
+exports.bumpVersion = bumpVersion;
+
+
+/***/ }),
+
+/***/ 4822:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const glob = __importStar(__nccwpck_require__(8090));
+const next_version_1 = __nccwpck_require__(2302);
+const conventional_recommended_bump_1 = __importDefault(__nccwpck_require__(7011));
+const files_adapters_1 = __nccwpck_require__(7333);
+const pumb_version_1 = __nccwpck_require__(6363);
+const generate_changelog_1 = __nccwpck_require__(3485);
+const git_1 = __nccwpck_require__(7052);
+// @ts-ignore
+const config = __importStar(__nccwpck_require__(8143));
+const { GITHUB_REPOSITORY } = process.env;
+try {
+    run();
+}
+catch (error) {
+    core.setFailed(error);
+}
+function getFiles() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const files = core
+            .getInput("bump-files")
+            .split(",")
+            .map((f) => f.trim())
+            .map((f) => __awaiter(this, void 0, void 0, function* () {
+            const globber = yield glob.create(f, {
+                followSymbolicLinks: true,
+            });
+            return yield globber.glob();
+        }));
+        return Promise.all(files).then((b) => {
+            return [].concat(...b);
+        });
+    });
+}
+function run() {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const githubToken = core.getInput("token");
+        const version = core.getInput("version");
+        const skipEmptyRelease = core.getInput("skip-on-empty").toLowerCase() === "true";
+        const versionFile = core.getInput("version-file").trim();
+        const files = yield getFiles();
+        const outputFile = core.getInput("output-file");
+        const tagPrefix = core.getInput("tag-prefix");
+        const releaseCount = (_a = parseInt(core.getInput("release-count"))) !== null && _a !== void 0 ? _a : 0;
+        const birthday = core.getInput("birthday");
+        core.setSecret(githubToken);
+        // const gitUserName = core.getInput("git-user-name");
+        // const gitUserEmail = core.getInput("git-user-email");
+        const git = new git_1.Git("github-actions", "github-actions@github.com");
+        git.updateOrigin(`https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`);
+        // pull git history
+        yield git.pull();
+        (0, conventional_recommended_bump_1.default)({ config, tagPrefix }, (error, recommendation) => __awaiter(this, void 0, void 0, function* () {
+            var _b;
+            if (error) {
+                core.setFailed(error.message);
+                return;
+            }
+            core.info(`Recommended release type: ${recommendation.releaseType}`);
+            // If we have a reason also log it
+            if (recommendation.reason) {
+                core.info(`Because: ${recommendation.reason}`);
+            }
+            const newVersion = (0, next_version_1.getNextVersion)({
+                curr: (_b = files_adapters_1.FsAdapters[versionFile.split(".").pop()].readVersion(versionFile)) !== null && _b !== void 0 ? _b : "0.0.0",
+                pattern: version,
+                birthday,
+            }, recommendation.releaseType);
+            const gitTag = `${tagPrefix}${newVersion}`;
+            core.info(`Files to bump: ${files.join(", ")}`);
+            (0, pumb_version_1.bumpVersion)(files, {
+                version: newVersion,
+            });
+            // Generate the string changelog
+            const stringChangelog = yield (0, generate_changelog_1.generateChangelogString)(tagPrefix, newVersion, 1, config);
+            core.info("Changelog generated");
+            core.info(stringChangelog);
+            // Removes the version number from the changelog
+            const cleanChangelog = stringChangelog
+                .split("\n")
+                .slice(3)
+                .join("\n")
+                .trim();
+            if (skipEmptyRelease && cleanChangelog === "") {
+                core.info("Generated changelog is empty and skip-on-empty has been activated so we skip this step");
+                core.setOutput("released", false);
+                return;
+            }
+            core.info(`New version: ${newVersion}`);
+            // If output file === 'false' we don't write it to file
+            if (outputFile !== "false") {
+                // Generate the changelog
+                yield (0, generate_changelog_1.generateChangelogFile)(tagPrefix, newVersion, releaseCount, outputFile, config);
+            }
+            yield git.add(".");
+            yield git.commit(`chore(release): ${newVersion} :tada: [skip ci]`);
+            // Create the new tag
+            yield git.createTag(gitTag);
+            try {
+                core.info("Push all changes");
+                yield git.push();
+            }
+            catch (error) {
+                console.error(error);
+                core.setFailed(error);
+                return;
+            }
+            // Set outputs so other actions (for example actions/create-release) can use it
+            core.setOutput("tag", gitTag);
+            core.setOutput("release_notes", cleanChangelog);
+            core.setOutput("version", newVersion);
+            core.setOutput("released", true);
+        }));
+    });
+}
+
+
+/***/ }),
+
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -3860,6 +4263,18 @@ module.exports = addStream;
 
 /***/ }),
 
+/***/ 8912:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = function(val) {
+  return Array.isArray(val) ? val : [val];
+};
+
+
+/***/ }),
+
 /***/ 9417:
 /***/ ((module) => {
 
@@ -4217,6 +4632,56 @@ module.exports = bufferFrom
 
 /***/ }),
 
+/***/ 4623:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var arrayify = __nccwpck_require__(8912);
+var dotPropGet = (__nccwpck_require__(2042).get);
+
+function compareFunc(prop) {
+  return function(a, b) {
+    var ret = 0;
+
+    arrayify(prop).some(function(el) {
+      var x;
+      var y;
+
+      if (typeof el === 'function') {
+        x = el(a);
+        y = el(b);
+      } else if (typeof el === 'string') {
+        x = dotPropGet(a, el);
+        y = dotPropGet(b, el);
+      } else {
+        x = a;
+        y = b;
+      }
+
+      if (x === y) {
+        ret = 0;
+        return;
+      }
+
+      if (typeof x === 'string' && typeof y === 'string') {
+        ret = x.localeCompare(y);
+        return ret !== 0;
+      }
+
+      ret = x < y ? -1 : 1;
+      return true;
+    });
+
+    return ret;
+  };
+}
+
+module.exports = compareFunc;
+
+
+/***/ }),
+
 /***/ 6891:
 /***/ ((module) => {
 
@@ -4383,6 +4848,221 @@ function u8Concat (parts) {
     }
   }
   return u8
+}
+
+
+/***/ }),
+
+/***/ 5290:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const Q = __nccwpck_require__(6172)
+const parserOpts = __nccwpck_require__(4593)
+const writerOpts = __nccwpck_require__(8631)
+
+module.exports = Q.all([parserOpts, writerOpts])
+  .spread((parserOpts, writerOpts) => {
+    return { parserOpts, writerOpts }
+  })
+
+
+/***/ }),
+
+/***/ 3625:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const parserOpts = __nccwpck_require__(4593)
+
+module.exports = {
+  parserOpts,
+
+  whatBump: (commits) => {
+    let level = 2
+    let breakings = 0
+    let features = 0
+
+    commits.forEach(commit => {
+      if (commit.notes.length > 0) {
+        breakings += commit.notes.length
+        level = 0
+      } else if (commit.type === 'feat') {
+        features += 1
+        if (level === 2) {
+          level = 1
+        }
+      }
+    })
+
+    return {
+      level: level,
+      reason: breakings === 1
+        ? `There is ${breakings} BREAKING CHANGE and ${features} features`
+        : `There are ${breakings} BREAKING CHANGES and ${features} features`
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 8143:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const Q = __nccwpck_require__(6172)
+const conventionalChangelog = __nccwpck_require__(5290)
+const parserOpts = __nccwpck_require__(4593)
+const recommendedBumpOpts = __nccwpck_require__(3625)
+const writerOpts = __nccwpck_require__(8631)
+
+module.exports = Q.all([conventionalChangelog, parserOpts, recommendedBumpOpts, writerOpts])
+  .spread((conventionalChangelog, parserOpts, recommendedBumpOpts, writerOpts) => {
+    return { conventionalChangelog, parserOpts, recommendedBumpOpts, writerOpts }
+  })
+
+
+/***/ }),
+
+/***/ 4593:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = {
+  headerPattern: /^(\w*)(?:\((.*)\))?: (.*)$/,
+  headerCorrespondence: [
+    'type',
+    'scope',
+    'subject'
+  ],
+  noteKeywords: ['BREAKING CHANGE'],
+  revertPattern: /^(?:Revert|revert:)\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
+  revertCorrespondence: ['header', 'hash']
+}
+
+
+/***/ }),
+
+/***/ 8631:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const compareFunc = __nccwpck_require__(4623)
+const Q = __nccwpck_require__(6172)
+const readFile = Q.denodeify((__nccwpck_require__(7147).readFile))
+const resolve = (__nccwpck_require__(1017).resolve)
+
+module.exports = Q.all([
+  readFile(__nccwpck_require__.ab + "template.hbs", 'utf-8'),
+  readFile(__nccwpck_require__.ab + "header.hbs", 'utf-8'),
+  readFile(__nccwpck_require__.ab + "commit.hbs", 'utf-8'),
+  readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+])
+  .spread((template, header, commit, footer) => {
+    const writerOpts = getWriterOpts()
+
+    writerOpts.mainTemplate = template
+    writerOpts.headerPartial = header
+    writerOpts.commitPartial = commit
+    writerOpts.footerPartial = footer
+
+    return writerOpts
+  })
+
+function getWriterOpts () {
+  return {
+    transform: (commit, context) => {
+      let discard = true
+      const issues = []
+
+      commit.notes.forEach(note => {
+        note.title = 'BREAKING CHANGES'
+        discard = false
+      })
+
+      if (commit.type === 'feat') {
+        commit.type = 'Features'
+      } else if (commit.type === 'fix') {
+        commit.type = 'Bug Fixes'
+      } else if (commit.type === 'perf') {
+        commit.type = 'Performance Improvements'
+      } else if (commit.type === 'revert' || commit.revert) {
+        commit.type = 'Reverts'
+      } else if (discard) {
+        return
+      } else if (commit.type === 'docs') {
+        commit.type = 'Documentation'
+      } else if (commit.type === 'style') {
+        commit.type = 'Styles'
+      } else if (commit.type === 'refactor') {
+        commit.type = 'Code Refactoring'
+      } else if (commit.type === 'test') {
+        commit.type = 'Tests'
+      } else if (commit.type === 'build') {
+        commit.type = 'Build System'
+      } else if (commit.type === 'ci') {
+        commit.type = 'Continuous Integration'
+      }
+
+      if (commit.scope === '*') {
+        commit.scope = ''
+      }
+
+      if (typeof commit.hash === 'string') {
+        commit.shortHash = commit.hash.substring(0, 7)
+      }
+
+      if (typeof commit.subject === 'string') {
+        let url = context.repository
+          ? `${context.host}/${context.owner}/${context.repository}`
+          : context.repoUrl
+        if (url) {
+          url = `${url}/issues/`
+          // Issue URLs.
+          commit.subject = commit.subject.replace(/#([0-9]+)/g, (_, issue) => {
+            issues.push(issue)
+            return `[#${issue}](${url}${issue})`
+          })
+        }
+        if (context.host) {
+          // User URLs.
+          commit.subject = commit.subject.replace(/\B@([a-z0-9](?:-?[a-z0-9/]){0,38})/g, (_, username) => {
+            if (username.includes('/')) {
+              return `@${username}`
+            }
+
+            return `[@${username}](${context.host}/${username})`
+          })
+        }
+      }
+
+      // remove references that already appear in the subject
+      commit.references = commit.references.filter(reference => {
+        if (issues.indexOf(reference.issue) === -1) {
+          return true
+        }
+
+        return false
+      })
+
+      return commit
+    },
+    groupBy: 'type',
+    commitGroupsSort: 'title',
+    commitsSort: ['scope', 'subject'],
+    noteGroupsSort: 'title',
+    notesSort: compareFunc
+  }
 }
 
 
@@ -6236,10 +6916,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -7730,6 +8410,156 @@ function kindOf(val) {
     module.exports = dateFormat;
   } else {}
 })(this);
+
+
+/***/ }),
+
+/***/ 2042:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const isObj = __nccwpck_require__(1389);
+
+const disallowedKeys = [
+	'__proto__',
+	'prototype',
+	'constructor'
+];
+
+const isValidPath = pathSegments => !pathSegments.some(segment => disallowedKeys.includes(segment));
+
+function getPathSegments(path) {
+	const pathArray = path.split('.');
+	const parts = [];
+
+	for (let i = 0; i < pathArray.length; i++) {
+		let p = pathArray[i];
+
+		while (p[p.length - 1] === '\\' && pathArray[i + 1] !== undefined) {
+			p = p.slice(0, -1) + '.';
+			p += pathArray[++i];
+		}
+
+		parts.push(p);
+	}
+
+	if (!isValidPath(parts)) {
+		return [];
+	}
+
+	return parts;
+}
+
+module.exports = {
+	get(object, path, value) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return value === undefined ? object : value;
+		}
+
+		const pathArray = getPathSegments(path);
+		if (pathArray.length === 0) {
+			return;
+		}
+
+		for (let i = 0; i < pathArray.length; i++) {
+			if (!Object.prototype.propertyIsEnumerable.call(object, pathArray[i])) {
+				return value;
+			}
+
+			object = object[pathArray[i]];
+
+			if (object === undefined || object === null) {
+				// `object` is either `undefined` or `null` so we want to stop the loop, and
+				// if this is not the last bit of the path, and
+				// if it did't return `undefined`
+				// it would return `null` if `object` is `null`
+				// but we want `get({foo: null}, 'foo.bar')` to equal `undefined`, or the supplied value, not `null`
+				if (i !== pathArray.length - 1) {
+					return value;
+				}
+
+				break;
+			}
+		}
+
+		return object;
+	},
+
+	set(object, path, value) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return object;
+		}
+
+		const root = object;
+		const pathArray = getPathSegments(path);
+
+		for (let i = 0; i < pathArray.length; i++) {
+			const p = pathArray[i];
+
+			if (!isObj(object[p])) {
+				object[p] = {};
+			}
+
+			if (i === pathArray.length - 1) {
+				object[p] = value;
+			}
+
+			object = object[p];
+		}
+
+		return root;
+	},
+
+	delete(object, path) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return false;
+		}
+
+		const pathArray = getPathSegments(path);
+
+		for (let i = 0; i < pathArray.length; i++) {
+			const p = pathArray[i];
+
+			if (i === pathArray.length - 1) {
+				delete object[p];
+				return true;
+			}
+
+			object = object[p];
+
+			if (!isObj(object)) {
+				return false;
+			}
+		}
+	},
+
+	has(object, path) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return false;
+		}
+
+		const pathArray = getPathSegments(path);
+		if (pathArray.length === 0) {
+			return false;
+		}
+
+		// eslint-disable-next-line unicorn/no-for-loop
+		for (let i = 0; i < pathArray.length; i++) {
+			if (isObj(object)) {
+				if (!(pathArray[i] in object)) {
+					return false;
+				}
+
+				object = object[pathArray[i]];
+			} else {
+				return false;
+			}
+		}
+
+		return true;
+	}
+};
 
 
 /***/ }),
@@ -15413,6 +16243,20 @@ var data = __nccwpck_require__(6151);
 
 module.exports = function isCore(x, nodeVersion) {
 	return has(data, x) && versionIncluded(nodeVersion, data[x]);
+};
+
+
+/***/ }),
+
+/***/ 1389:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = value => {
+	const type = typeof value;
+	return value !== null && (type === 'object' || type === 'function');
 };
 
 
@@ -62492,408 +63336,6 @@ try {
 
 /***/ }),
 
-/***/ 5144:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.FsAdapters = void 0;
-const fs_1 = __importDefault(__nccwpck_require__(7147));
-exports.FsAdapters = {
-    json: new (class {
-        readVersion(file) {
-            return this.read(file).version;
-        }
-        updateVersion(file, version) {
-            const data = this.read(file);
-            data.version = version;
-            this.write(file, data);
-        }
-        read(file) {
-            return JSON.parse(fs_1.default.readFileSync(file, "utf8"));
-        }
-        write(file, data) {
-            fs_1.default.writeFileSync(file, JSON.stringify(data, null, 2));
-        }
-    })(),
-};
-
-
-/***/ }),
-
-/***/ 2287:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.generateChangelogString = exports.generateChangelogFile = void 0;
-const conventional_changelog_1 = __importDefault(__nccwpck_require__(9461));
-const fs_1 = __importDefault(__nccwpck_require__(7147));
-const generateChangelogStream = (tagPrefix, version, releaseCount) => (0, conventional_changelog_1.default)({
-    preset: "angular",
-    releaseCount,
-    tagPrefix,
-}, {
-    version,
-});
-const generateChangelogFile = (tagPrefix, version, releaseCount, path) => new Promise((resolve) => {
-    const changelogStream = generateChangelogStream(tagPrefix, version, releaseCount);
-    changelogStream.pipe(fs_1.default.createWriteStream(path)).on("finish", resolve);
-});
-exports.generateChangelogFile = generateChangelogFile;
-const generateChangelogString = (tagPrefix, version, releaseCount) => new Promise((resolve, reject) => {
-    const changelogStream = generateChangelogStream(tagPrefix, version, releaseCount);
-    let changelog = "";
-    changelogStream
-        .on("data", (data) => {
-        changelog += data.toString();
-    })
-        .on("end", () => resolve(changelog));
-});
-exports.generateChangelogString = generateChangelogString;
-
-
-/***/ }),
-
-/***/ 2565:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Git = void 0;
-const exec_1 = __nccwpck_require__(1514);
-const { GITHUB_REF } = process.env;
-const branch = GITHUB_REF === null || GITHUB_REF === void 0 ? void 0 : GITHUB_REF.replace("refs/heads/", "");
-class Git {
-    constructor(gitUserName, gitUserEmail) {
-        this.commandsRun = [];
-        this.exec = (command) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-            let execOutput = "";
-            const options = {
-                listeners: {
-                    stdout: (data) => {
-                        execOutput += data.toString();
-                    },
-                },
-            };
-            const exitCode = yield (0, exec_1.exec)(`git ${command}`, undefined, options);
-            if (exitCode === 0) {
-                resolve(execOutput);
-            }
-            else {
-                reject(`Command "git ${command}" exited with code ${exitCode}.`);
-            }
-        }));
-        this.config = (key, value) => this.exec(`config ${key} "${value}"`);
-        this.add = (file) => this.exec(`add ${file}`);
-        this.commit = (message) => this.exec(`commit -m "${message}"`);
-        this.pull = () => __awaiter(this, void 0, void 0, function* () {
-            const args = ["pull"];
-            // Check if the repo is unshallow
-            if (yield this.isShallow()) {
-                args.push("--unshallow");
-            }
-            args.push("--tags");
-            args.push("--ff-only");
-            return this.exec(args.join(" "));
-        });
-        this.push = () => this.exec(`push origin ${branch} --follow-tags`);
-        this.isShallow = () => __awaiter(this, void 0, void 0, function* () {
-            const isShallow = yield this.exec("rev-parse --is-shallow-repository");
-            return isShallow.trim().replace("\n", "") === "true";
-        });
-        this.updateOrigin = (repo) => this.exec(`remote set-url origin ${repo}`);
-        this.createTag = (tag) => this.exec(`tag -a ${tag} -m "${tag}"`);
-        // Set config
-        this.config("user.name", gitUserName);
-        this.config("user.email", gitUserEmail);
-    }
-}
-exports.Git = Git;
-
-
-/***/ }),
-
-/***/ 2091:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getNextVersion = void 0;
-const luxon_1 = __nccwpck_require__(8811);
-const getNextVersion = (version, type) => {
-    const variables = prepareVars(version, type);
-    variables["bump"] = getBump(version, variables);
-    return version.pattern.replace(/\{(.*?)\}/g, (match, p1) => {
-        var _a;
-        return `${(_a = variables[p1]) !== null && _a !== void 0 ? _a : 0}`;
-    });
-};
-exports.getNextVersion = getNextVersion;
-function getBump(version, vars) {
-    const rest = version.pattern
-        .split(".")
-        .map((v) => {
-        if (v.startsWith("{") && v.endsWith("}")) {
-            return v.slice(1, -1);
-        }
-        return "";
-    })
-        .some((v) => {
-        return vars[v] !== getVarValue(version, v);
-    });
-    return rest ? 0 : getVarValue(version, "bump") + 1;
-}
-function prepareVars(version, type) {
-    var _a, _b, _c;
-    const age = luxon_1.DateTime.now()
-        .diff(luxon_1.DateTime.fromISO(version.birthday), ["years", "months", "days"])
-        .toObject();
-    const vars = {
-        major: getVarValue(version, "major"),
-        minor: getVarValue(version, "minor"),
-        patch: getVarValue(version, "minor"),
-        years: (_a = age.years) !== null && _a !== void 0 ? _a : 0,
-        months: (_b = age.months) !== null && _b !== void 0 ? _b : 0,
-        days: (_c = age.days) !== null && _c !== void 0 ? _c : 0,
-    };
-    switch (type) {
-        case "major":
-            vars.major += 1;
-            vars.minor = 0;
-            vars.patch = 0;
-            break;
-        case "minor":
-            vars.minor += 1;
-            vars.patch = 0;
-            break;
-        default:
-            vars.patch += 1;
-    }
-    return vars;
-}
-function getVarValue(version, name) {
-    const values = version.curr.split(".").map(Number);
-    const vars = version.pattern.split(".").map((v) => {
-        if (v.startsWith("{") && v.endsWith("}")) {
-            return v.slice(1, -1);
-        }
-        return "-";
-    });
-    return values[vars.findIndex((v) => v === name)];
-}
-
-
-/***/ }),
-
-/***/ 4078:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.bumpVersion = void 0;
-const files_adapters_1 = __nccwpck_require__(5144);
-const bumpVersion = (files, opts) => __awaiter(void 0, void 0, void 0, function* () {
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const fileExtension = file.split(".").pop();
-        files_adapters_1.FsAdapters[fileExtension].updateVersion(file, opts.version);
-    }
-});
-exports.bumpVersion = bumpVersion;
-
-
-/***/ }),
-
-/***/ 6144:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const glob = __importStar(__nccwpck_require__(8090));
-const next_version_1 = __nccwpck_require__(2091);
-const conventional_recommended_bump_1 = __importDefault(__nccwpck_require__(7011));
-const files_adapters_1 = __nccwpck_require__(5144);
-const pumb_version_1 = __nccwpck_require__(4078);
-const generate_changelog_1 = __nccwpck_require__(2287);
-const git_1 = __nccwpck_require__(2565);
-const { GITHUB_REPOSITORY } = process.env;
-try {
-    run();
-}
-catch (error) {
-    core.setFailed(error);
-}
-function getFiles() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const files = core
-            .getInput("bump-files")
-            .split(",")
-            .map((f) => f.trim())
-            .map((f) => __awaiter(this, void 0, void 0, function* () {
-            const globber = yield glob.create(f, {
-                followSymbolicLinks: true,
-            });
-            return yield globber.glob();
-        }));
-        return Promise.all(files).then((b) => {
-            return [].concat(...b);
-        });
-    });
-}
-function run() {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const githubToken = core.getInput("token");
-        const version = core.getInput("version");
-        const skipEmptyRelease = core.getInput("skip-on-empty").toLowerCase() === "true";
-        const versionFile = core.getInput("version-file").trim();
-        const files = yield getFiles();
-        const outputFile = core.getInput("output-file");
-        const tagPrefix = core.getInput("tag-prefix");
-        const releaseCount = (_a = parseInt(core.getInput("release-count"))) !== null && _a !== void 0 ? _a : 0;
-        const preset = "angular";
-        const birthday = core.getInput("birthday");
-        core.setSecret(githubToken);
-        // const gitUserName = core.getInput("git-user-name");
-        // const gitUserEmail = core.getInput("git-user-email");
-        const git = new git_1.Git("github-actions", "github-actions@github.com");
-        git.updateOrigin(`https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`);
-        // pull git history
-        yield git.pull();
-        (0, conventional_recommended_bump_1.default)({ preset, tagPrefix }, (error, recommendation) => __awaiter(this, void 0, void 0, function* () {
-            var _b;
-            if (error) {
-                core.setFailed(error.message);
-                return;
-            }
-            core.info(`Recommended release type: ${recommendation.releaseType}`);
-            // If we have a reason also log it
-            if (recommendation.reason) {
-                core.info(`Because: ${recommendation.reason}`);
-            }
-            const newVersion = (0, next_version_1.getNextVersion)({
-                curr: (_b = files_adapters_1.FsAdapters[versionFile.split(".").pop()].readVersion(versionFile)) !== null && _b !== void 0 ? _b : "0.0.0",
-                pattern: version,
-                birthday,
-            }, recommendation.releaseType);
-            const gitTag = `${tagPrefix}${newVersion}`;
-            core.info(`Files to bump: ${files.join(", ")}`);
-            (0, pumb_version_1.bumpVersion)(files, {
-                version: newVersion,
-            });
-            // Generate the string changelog
-            const stringChangelog = yield (0, generate_changelog_1.generateChangelogString)(tagPrefix, newVersion, 1);
-            core.info("Changelog generated");
-            core.info(stringChangelog);
-            // Removes the version number from the changelog
-            const cleanChangelog = stringChangelog
-                .split("\n")
-                .slice(3)
-                .join("\n")
-                .trim();
-            if (skipEmptyRelease && cleanChangelog === "") {
-                core.info("Generated changelog is empty and skip-on-empty has been activated so we skip this step");
-                core.setOutput("released", false);
-                return;
-            }
-            core.info(`New version: ${newVersion}`);
-            // If output file === 'false' we don't write it to file
-            if (outputFile !== "false") {
-                // Generate the changelog
-                yield (0, generate_changelog_1.generateChangelogFile)(tagPrefix, newVersion, releaseCount, outputFile);
-            }
-            yield git.add(".");
-            yield git.commit(`chore(release): ${newVersion} :tada: [skip ci]`);
-            // Create the new tag
-            yield git.createTag(gitTag);
-            try {
-                core.info("Push all changes");
-                yield git.push();
-            }
-            catch (error) {
-                console.error(error);
-                core.setFailed(error);
-                return;
-            }
-            // Set outputs so other actions (for example actions/create-release) can use it
-            core.setOutput("tag", gitTag);
-            core.setOutput("release_notes", cleanChangelog);
-            core.setOutput("version", newVersion);
-            core.setOutput("released", true);
-        }));
-    });
-}
-
-
-/***/ }),
-
 /***/ 9491:
 /***/ ((module) => {
 
@@ -63196,7 +63638,7 @@ module.exports = JSON.parse('["0BSD","AAL","ADSL","AFL-1.1","AFL-1.2","AFL-2.0",
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(6144);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(4822);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

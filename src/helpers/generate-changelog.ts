@@ -4,11 +4,12 @@ import fs from "fs";
 const generateChangelogStream = (
   tagPrefix: string,
   version: string,
-  releaseCount: number
+  releaseCount: number,
+  config: any
 ) =>
   conventionalChangelog(
     {
-      preset: "angular",
+      config,
       releaseCount,
       tagPrefix,
     },
@@ -21,13 +22,15 @@ export const generateChangelogFile = (
   tagPrefix: string,
   version: string,
   releaseCount: number,
-  path: string
+  path: string,
+  config: any
 ) =>
   new Promise((resolve) => {
     const changelogStream = generateChangelogStream(
       tagPrefix,
       version,
-      releaseCount
+      releaseCount,
+      config
     );
 
     changelogStream.pipe(fs.createWriteStream(path)).on("finish", resolve);
@@ -36,13 +39,15 @@ export const generateChangelogFile = (
 export const generateChangelogString = (
   tagPrefix: string,
   version: string,
-  releaseCount: number
+  releaseCount: number,
+  config: any
 ) =>
   new Promise<string>((resolve, reject) => {
     const changelogStream = generateChangelogStream(
       tagPrefix,
       version,
-      releaseCount
+      releaseCount,
+      config
     );
     let changelog = "";
 

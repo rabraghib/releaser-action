@@ -1,10 +1,6 @@
 # Dependency directory
 node_modules
 
-dist/*
-!dist/index.js
-!dist/licenses.txt
-
 # Rest pulled from https://github.com/github/gitignore/blob/master/Node.gitignore
 # Logs
 logs

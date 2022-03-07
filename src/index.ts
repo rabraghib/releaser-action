@@ -9,6 +9,10 @@ import {
   generateChangelogString,
 } from "./helpers/generate-changelog";
 import { Git } from "./helpers/git";
+
+// @ts-ignore
+import * as config from "conventional-changelog-angular";
+
 const { GITHUB_REPOSITORY } = process.env;
 
 try {
@@ -44,7 +48,6 @@ async function run() {
   const outputFile = core.getInput("output-file");
   const tagPrefix = core.getInput("tag-prefix");
   const releaseCount = parseInt(core.getInput("release-count")) ?? 0;
-  const preset = "angular";
   const birthday = core.getInput("birthday");
 
   core.setSecret(githubToken);
@@ -59,7 +62,7 @@ async function run() {
   await git.pull();
 
   conventionalRecommendedBump(
-    { preset, tagPrefix },
+    { config, tagPrefix },
     async (error, recommendation) => {
       if (error) {
         core.setFailed(error.message);
@@ -96,7 +99,8 @@ async function run() {
       const stringChangelog = await generateChangelogString(
         tagPrefix,
         newVersion,
-        1
+        1,
+        config
       );
       core.info("Changelog generated");
       core.info(stringChangelog);
@@ -125,7 +129,8 @@ async function run() {
           tagPrefix,
           newVersion,
           releaseCount,
-          outputFile
+          outputFile,
+          config
         );
       }
 
