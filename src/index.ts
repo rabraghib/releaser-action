@@ -35,7 +35,7 @@ async function getFiles(): Promise<string[]> {
 }
 
 async function run() {
-  const githubToken = core.getInput("github-token");
+  const githubToken = core.getInput("token");
   const version = core.getInput("version");
   const skipEmptyRelease =
     core.getInput("skip-on-empty").toLowerCase() === "true";

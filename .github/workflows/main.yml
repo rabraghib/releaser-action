@@ -14,8 +14,6 @@ jobs:
       - name: This action
         id: changelog
         uses: ./
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Dump output
         run: |

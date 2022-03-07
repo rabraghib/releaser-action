@@ -1,9 +1,10 @@
 name: "Chaospad Releaser"
 description: ""
 inputs:
-  github-token:
+  token:
     description: "Github token"
     required: false
+    default: ${{ github.token }}
 
   version:
     description: "The version to release (accepts including var. e.g '{major}.{minor}.{patch}')"
