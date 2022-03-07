@@ -62811,7 +62811,7 @@ function getFiles() {
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const githubToken = core.getInput("github-token");
+        const githubToken = core.getInput("token");
         const version = core.getInput("version");
         const skipEmptyRelease = core.getInput("skip-on-empty").toLowerCase() === "true";
         const versionFile = core.getInput("version-file").trim();

@@ -1,4 +1,13 @@
-# 1.1.0 "v1.1.0" (2022-03-07)
+## [1.1.2](https://github.com/chaospad/releaser/compare/v1.1.0...v1.1.2) "v1.1.2" (2022-03-07)
+
+
+### Bug Fixes
+
+* set default value for github token ([fbf680f](https://github.com/chaospad/releaser/commit/fbf680f5b5454e6265c32ee2695b7a6441ee12a9))
+
+
+
+# [1.1.0](https://github.com/chaospad/releaser/compare/7ab65fd8557ee4ceac4ccdfcc050520b926d72fb...v1.1.0) "v1.1.2" (2022-03-07)
 
 
 ### Bug Fixes
