@@ -1,3 +1,13 @@
+## [1.3.3](https://github.com/chaospad/releaser/compare/v1.3.2...v1.3.3) (2022-03-08)
+
+
+### Bug Fixes
+
+* correct {bump} value ([658b0d4](https://github.com/chaospad/releaser/commit/658b0d45407207020427a0617fd61de9030a94ea))
+* tags are not pushed ([e6a2ae7](https://github.com/chaospad/releaser/commit/e6a2ae732111864e27ae12dacd724a81e329cf1c))
+
+
+
 ## [1.3.2](https://github.com/chaospad/releaser/compare/v1.3.1...v1.3.2) (2022-03-08)
 
 
