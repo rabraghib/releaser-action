@@ -41,6 +41,11 @@ async function getFiles(): Promise<string[]> {
 async function run() {
   const githubToken = core.getInput("token");
   const version = core.getInput("version");
+  const extraTags = core
+    .getInput("extra-tags")
+    .split("\n")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const skipEmptyRelease =
     core.getInput("skip-on-empty").toLowerCase() === "true";
   const versionFile = core.getInput("version-file").trim();
@@ -57,11 +62,13 @@ async function run() {
   // const gitUserName = core.getInput("git-user-name");
   // const gitUserEmail = core.getInput("git-user-email");
   const git = new Git("github-actions", "github-actions@github.com");
-  // git.updateOrigin(
-  //   `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
-  // );
+
   // pull git history
   await git.pull();
+
+  git.updateOrigin(
+    `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
+  );
 
   conventionalRecommendedBump(
     { config, tagPrefix },
@@ -78,7 +85,7 @@ async function run() {
         core.info(`Because: ${recommendation.reason}`);
       }
 
-      const newVersion = getNextVersion(
+      const [newVersion, gitTags] = getNextVersion(
         {
           curr:
             FsAdapters[versionFile.split(".").pop() as string].readVersion(
@@ -86,6 +93,7 @@ async function run() {
             ) ?? "0.0.0",
           pattern: version,
           birthday,
+          extraTags,
         },
         recommendation.releaseType
       );
@@ -141,6 +149,9 @@ async function run() {
 
       // Create the new tag
       await git.createTag(gitTag);
+      for (const tag of gitTags) {
+        await git.createTag(tag, true);
+      }
 
       try {
         core.info("Push all changes");

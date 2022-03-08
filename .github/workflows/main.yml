@@ -27,22 +27,18 @@ jobs:
         with:
           ref: "main"
 
-      - name: This action
+      - name: Generate changelog and bump version
         id: changelog
         uses: ./
+        with:
+          git-tags: |
+            v{major}
+            v{major}.{minor}
 
-      - name: Dump output
-        run: |
-          echo "${{ steps.changelog.outputs.tag }}"
-          echo "${{ steps.changelog.outputs.release_notes }}"
-          echo "${{ steps.changelog.outputs.version }}"
-          echo "${{ steps.changelog.outputs.released }}"
-
-      - name: Its not released
-        if: ${{ !steps.changelog.outputs.released }}
-        run: |
-          echo "${{ steps.changelog.outputs.released }}"
-      - name: Its released
+      - uses: softprops/action-gh-release@v1
         if: ${{ steps.changelog.outputs.released }}
-        run: |
-          echo "${{ steps.changelog.outputs.released }}"
+        id: release
+        with:
+          name: "Chaospad Releaser ${{ steps.changelog.outputs.tag }}"
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.release_notes }}

@@ -4,20 +4,28 @@ interface IVersion {
   curr: string;
   pattern: string;
   birthday: string;
+  extraTags: string[];
 }
 
 export const getNextVersion = (
   version: IVersion,
   type?: "major" | "minor" | "patch"
-): string => {
+): [string, string[]] => {
   const variables: {
     [key: string]: number;
   } = prepareVars(version, type);
   variables["bump"] = getBump(version, variables);
-  return version.pattern.replace(/\{(.*?)\}/g, (match, p1) => {
-    return `${variables[p1] ?? 0}`;
-  });
+  return [
+    replaceVars(version.pattern, variables),
+    version.extraTags.map((tag) => replaceVars(tag, variables)),
+  ];
 };
+
+function replaceVars(version: string, vars: { [key: string]: number }) {
+  return version.replace(/\{(.*?)\}/g, (match, p1) => {
+    return `${vars[p1] ?? 0}`;
+  });
+}
 
 function getBump(version: IVersion, vars: { [key: string]: number }) {
   const rest = version.pattern

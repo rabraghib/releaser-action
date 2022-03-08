@@ -11,6 +11,10 @@ inputs:
     required: false
     default: "{major}.{minor}.{patch}"
 
+  extra-tags:
+    description: "The git tags to release (accepts including var. e.g 'v{major}')"
+    required: false
+
   skip-on-empty:
     description: "Do nothing when the changelog from the latest release is empty"
     required: false

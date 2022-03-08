@@ -54,7 +54,7 @@ export class Git {
     return this.exec(args.join(" "));
   };
 
-  push = () => this.exec(`push origin ${branch} --follow-tags`);
+  push = () => this.exec(`push origin ${branch} --follow-tags -f`);
 
   isShallow = async () => {
     const isShallow = await this.exec("rev-parse --is-shallow-repository");
@@ -64,5 +64,6 @@ export class Git {
 
   updateOrigin = (repo: string) => this.exec(`remote set-url origin ${repo}`);
 
-  createTag = (tag: string) => this.exec(`tag -a ${tag} -m "${tag}"`);
+  createTag = (tag: string, force: boolean = false) =>
+    this.exec(`tag -a ${tag} -m "${tag}" ${force ? "-f" : ""}`);
 }
