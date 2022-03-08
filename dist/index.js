@@ -184,9 +184,9 @@ function prepareVars(version, type) {
         major: getVarValue(version, "major"),
         minor: getVarValue(version, "minor"),
         patch: getVarValue(version, "patch"),
-        years: (_a = age.years) !== null && _a !== void 0 ? _a : 0,
-        months: (_b = age.months) !== null && _b !== void 0 ? _b : 0,
-        days: (_c = age.days) !== null && _c !== void 0 ? _c : 0,
+        years: Math.floor((_a = age.years) !== null && _a !== void 0 ? _a : 0),
+        months: Math.floor((_b = age.months) !== null && _b !== void 0 ? _b : 0),
+        days: Math.floor((_c = age.days) !== null && _c !== void 0 ? _c : 0),
     };
     switch (type) {
         case "major":
