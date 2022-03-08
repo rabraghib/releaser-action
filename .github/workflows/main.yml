@@ -31,7 +31,8 @@ jobs:
         id: changelog
         uses: ./
         with:
-          git-tags: |
+          bump-files: '**/package.json'
+          extra-tags: |
             v{major}
             v{major}.{minor}
 
