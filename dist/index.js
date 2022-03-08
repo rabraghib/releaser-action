@@ -124,13 +124,13 @@ class Git {
             args.push("--ff-only");
             return this.exec(args.join(" "));
         });
-        this.push = () => this.exec(`push origin ${branch} --follow-tags`);
+        this.push = () => this.exec(`push origin ${branch} --follow-tags -f`);
         this.isShallow = () => __awaiter(this, void 0, void 0, function* () {
             const isShallow = yield this.exec("rev-parse --is-shallow-repository");
             return isShallow.trim().replace("\n", "") === "true";
         });
         this.updateOrigin = (repo) => this.exec(`remote set-url origin ${repo}`);
-        this.createTag = (tag) => this.exec(`tag -a ${tag} -m "${tag}"`);
+        this.createTag = (tag, force = false) => this.exec(`tag -a ${tag} -m "${tag}" ${force ? "-f" : ""}`);
         // Set config
         this.config("user.name", gitUserName);
         this.config("user.email", gitUserEmail);
@@ -152,12 +152,18 @@ const luxon_1 = __nccwpck_require__(8811);
 const getNextVersion = (version, type) => {
     const variables = prepareVars(version, type);
     variables["bump"] = getBump(version, variables);
-    return version.pattern.replace(/\{(.*?)\}/g, (match, p1) => {
-        var _a;
-        return `${(_a = variables[p1]) !== null && _a !== void 0 ? _a : 0}`;
-    });
+    return [
+        replaceVars(version.pattern, variables),
+        version.extraTags.map((tag) => replaceVars(tag, variables)),
+    ];
 };
 exports.getNextVersion = getNextVersion;
+function replaceVars(version, vars) {
+    return version.replace(/\{(.*?)\}/g, (match, p1) => {
+        var _a;
+        return `${(_a = vars[p1]) !== null && _a !== void 0 ? _a : 0}`;
+    });
+}
 function getBump(version, vars) {
     const rest = version.pattern
         .split(".")
@@ -326,6 +332,11 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const githubToken = core.getInput("token");
         const version = core.getInput("version");
+        const extraTags = core
+            .getInput("extra-tags")
+            .split("\n")
+            .map((t) => t.trim())
+            .filter(Boolean);
         const skipEmptyRelease = core.getInput("skip-on-empty").toLowerCase() === "true";
         const versionFile = core.getInput("version-file").trim();
         const files = yield getFiles();
@@ -338,11 +349,9 @@ function run() {
         // const gitUserName = core.getInput("git-user-name");
         // const gitUserEmail = core.getInput("git-user-email");
         const git = new git_1.Git("github-actions", "github-actions@github.com");
-        // git.updateOrigin(
-        //   `https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`
-        // );
         // pull git history
         yield git.pull();
+        git.updateOrigin(`https://x-access-token:${githubToken}@github.com/${GITHUB_REPOSITORY}.git`);
         (0, conventional_recommended_bump_1.default)({ config, tagPrefix }, (error, recommendation) => __awaiter(this, void 0, void 0, function* () {
             var _b;
             if (error) {
@@ -354,10 +363,11 @@ function run() {
             if (recommendation.reason) {
                 core.info(`Because: ${recommendation.reason}`);
             }
-            const newVersion = (0, next_version_1.getNextVersion)({
+            const [newVersion, gitTags] = (0, next_version_1.getNextVersion)({
                 curr: (_b = files_adapters_1.FsAdapters[versionFile.split(".").pop()].readVersion(versionFile)) !== null && _b !== void 0 ? _b : "0.0.0",
                 pattern: version,
                 birthday,
+                extraTags,
             }, recommendation.releaseType);
             const gitTag = `${tagPrefix}${newVersion}`;
             core.info(`Files to bump: ${files.join(", ")}`);
@@ -389,6 +399,9 @@ function run() {
             yield git.commit(`chore(release): ${newVersion} :tada: [skip ci]`);
             // Create the new tag
             yield git.createTag(gitTag);
+            for (const tag of gitTags) {
+                yield git.createTag(tag, true);
+            }
             try {
                 core.info("Push all changes");
                 yield git.push();
