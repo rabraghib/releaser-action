@@ -47,7 +47,7 @@ function prepareVars(version: IVersion, type?: string) {
   const vars = {
     major: getVarValue(version, "major"),
     minor: getVarValue(version, "minor"),
-    patch: getVarValue(version, "minor"),
+    patch: getVarValue(version, "patch"),
     years: age.years ?? 0,
     months: age.months ?? 0,
     days: age.days ?? 0,
