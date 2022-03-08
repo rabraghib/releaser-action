@@ -1,3 +1,12 @@
+## [1.2.2](https://github.com/chaospad/releaser/compare/v1.2.1...v1.2.2) (2022-03-08)
+
+
+### Bug Fixes
+
+* ensure all vars are integers ([4c38190](https://github.com/chaospad/releaser/commit/4c3819013dfacbf480c79eef74aed6e57c0d3823))
+
+
+
 ## [1.2.1](https://github.com/chaospad/releaser/compare/v1.2.0...v1.2.1) (2022-03-08)
 
 
