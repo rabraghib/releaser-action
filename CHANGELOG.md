@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/chaospad/releaser/compare/v1.2.2...v1.3.0) (2022-03-08)
+
+
+### Features
+
+* add extra git tags support ([9e85e59](https://github.com/chaospad/releaser/commit/9e85e59bcf3816c165ee1844bf571596455df5ca))
+
+
+
 ## [1.2.2](https://github.com/chaospad/releaser/compare/v1.2.1...v1.2.2) (2022-03-08)
 
 
