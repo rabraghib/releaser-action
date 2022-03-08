@@ -1,3 +1,12 @@
+## [1.3.2](https://github.com/chaospad/releaser/compare/v1.3.1...v1.3.2) (2022-03-08)
+
+
+### Bug Fixes
+
+* use new lines instead of comma as bump-files seperator ([0893c71](https://github.com/chaospad/releaser/commit/0893c7147bf2832651afe1cb7f6b96b537621f2d))
+
+
+
 ## [1.3.1](https://github.com/chaospad/releaser/compare/v1.3.0...v1.3.1) (2022-03-08)
 
 
