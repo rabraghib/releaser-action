@@ -54,7 +54,8 @@ export class Git {
     return this.exec(args.join(" "));
   };
 
-  push = () => this.exec(`push origin ${branch} --follow-tags -f`);
+  push = () => this.exec(`push origin ${branch} --follow-tags`);
+  pushTags = () => this.exec(`push origin --tags --force`);
 
   isShallow = async () => {
     const isShallow = await this.exec("rev-parse --is-shallow-repository");

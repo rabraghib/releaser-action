@@ -155,6 +155,7 @@ async function run() {
 
       try {
         core.info("Push all changes");
+        await git.pushTags();
         await git.push();
       } catch (error: any) {
         console.error(error);
