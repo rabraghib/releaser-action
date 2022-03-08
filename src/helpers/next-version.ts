@@ -36,7 +36,13 @@ function getBump(version: IVersion, vars: { [key: string]: number }) {
 
 function prepareVars(version: IVersion, type?: string) {
   const age = DateTime.now()
-    .diff(DateTime.fromISO(version.birthday), ["years", "months", "days"])
+    .setZone("UTC")
+    .diff(
+      DateTime.fromISO(version.birthday, {
+        zone: "UTC",
+      }),
+      ["years", "months", "days"]
+    )
     .toObject();
   const vars = {
     major: getVarValue(version, "major"),
