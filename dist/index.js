@@ -175,12 +175,15 @@ function getBump(version, vars) {
 function prepareVars(version, type) {
     var _a, _b, _c;
     const age = luxon_1.DateTime.now()
-        .diff(luxon_1.DateTime.fromISO(version.birthday), ["years", "months", "days"])
+        .setZone("UTC")
+        .diff(luxon_1.DateTime.fromISO(version.birthday, {
+        zone: "UTC",
+    }), ["years", "months", "days"])
         .toObject();
     const vars = {
         major: getVarValue(version, "major"),
         minor: getVarValue(version, "minor"),
-        patch: getVarValue(version, "minor"),
+        patch: getVarValue(version, "patch"),
         years: (_a = age.years) !== null && _a !== void 0 ? _a : 0,
         months: (_b = age.months) !== null && _b !== void 0 ? _b : 0,
         days: (_c = age.days) !== null && _c !== void 0 ? _c : 0,
