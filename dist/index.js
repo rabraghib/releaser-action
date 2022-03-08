@@ -124,7 +124,8 @@ class Git {
             args.push("--ff-only");
             return this.exec(args.join(" "));
         });
-        this.push = () => this.exec(`push origin ${branch} --follow-tags -f`);
+        this.push = () => this.exec(`push origin ${branch} --follow-tags`);
+        this.pushTags = () => this.exec(`push origin --tags --force`);
         this.isShallow = () => __awaiter(this, void 0, void 0, function* () {
             const isShallow = yield this.exec("rev-parse --is-shallow-repository");
             return isShallow.trim().replace("\n", "") === "true";
@@ -174,7 +175,9 @@ function getBump(version, vars) {
         return "";
     })
         .some((v) => {
-        return vars[v] !== getVarValue(version, v);
+        return (vars[v] &&
+            getVarValue(version, v) &&
+            vars[v] !== getVarValue(version, v));
     });
     return rest ? 0 : getVarValue(version, "bump") + 1;
 }
@@ -404,6 +407,7 @@ function run() {
             }
             try {
                 core.info("Push all changes");
+                yield git.pushTags();
                 yield git.push();
             }
             catch (error) {
