@@ -1,3 +1,14 @@
+## [1.2.1](https://github.com/chaospad/releaser/compare/v1.2.0...v1.2.1) (2022-03-08)
+
+
+### Bug Fixes
+
+* bumping patch to the wrong version ([ea2a2d6](https://github.com/chaospad/releaser/commit/ea2a2d6f9633a3b4f22ea133754aaaf6d0a31e48))
+* change build commit scope ([58d3b72](https://github.com/chaospad/releaser/commit/58d3b7200d64f946c4a9f2840108a3d9af127563))
+* incorrect age calcualtion ([0fab10b](https://github.com/chaospad/releaser/commit/0fab10b0a24f79994a9dbf8597a1f1cbcb0d111c))
+
+
+
 # [1.2.0](https://github.com/chaospad/releaser/compare/v1.1.2...v1.2.0) (2022-03-07)
 
 
