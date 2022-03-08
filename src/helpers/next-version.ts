@@ -48,9 +48,9 @@ function prepareVars(version: IVersion, type?: string) {
     major: getVarValue(version, "major"),
     minor: getVarValue(version, "minor"),
     patch: getVarValue(version, "patch"),
-    years: age.years ?? 0,
-    months: age.months ?? 0,
-    days: age.days ?? 0,
+    years: Math.floor(age.years ?? 0),
+    months: Math.floor(age.months ?? 0),
+    days: Math.floor(age.days ?? 0),
   };
   switch (type) {
     case "major":
