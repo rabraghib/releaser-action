@@ -24,7 +24,7 @@ try {
 async function getFiles(): Promise<string[]> {
   const files = core
     .getInput("bump-files")
-    .split(",")
+    .split("\n")
     .map((f) => f.trim())
     .map(async (f) => {
       const globber = await glob.create(f, {
