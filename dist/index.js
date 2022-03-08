@@ -314,7 +314,7 @@ function getFiles() {
     return __awaiter(this, void 0, void 0, function* () {
         const files = core
             .getInput("bump-files")
-            .split(",")
+            .split("\n")
             .map((f) => f.trim())
             .map((f) => __awaiter(this, void 0, void 0, function* () {
             const globber = yield glob.create(f, {
