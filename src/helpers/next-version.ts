@@ -37,7 +37,11 @@ function getBump(version: IVersion, vars: { [key: string]: number }) {
       return "";
     })
     .some((v) => {
-      return vars[v] !== getVarValue(version, v);
+      return (
+        vars[v] &&
+        getVarValue(version, v) &&
+        vars[v] !== getVarValue(version, v)
+      );
     });
   return rest ? 0 : getVarValue(version, "bump") + 1;
 }
