@@ -1,4 +1,4 @@
-name: "Chaospad Releaser"
+name: "Releaser Action"
 description: ""
 inputs:
   token:

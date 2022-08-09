@@ -40,6 +40,6 @@ jobs:
         if: ${{ steps.changelog.outputs.released }}
         id: release
         with:
-          name: "Chaospad Releaser ${{ steps.changelog.outputs.tag }}"
+          name: "Releaser ${{ steps.changelog.outputs.tag }}"
           tag_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.release_notes }}

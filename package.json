@@ -1,5 +1,5 @@
 {
-  "name": "@chaospad/releaser",
+  "name": "@rabraghib/releaser-action",
   "version": "1.3.3",
   "description": "",
   "main": "dist/index.js",
@@ -20,12 +20,12 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chaospad/releaser/issues"
+    "url": "https://github.com/rabraghib/releaser-action/issues"
   },
-  "homepage": "https://github.com/chaospad/releaser#readme",
+  "homepage": "https://github.com/rabraghib/releaser-action#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chaospad/releaser.git"
+    "url": "git+https://github.com/rabraghib/releaser-action.git"
   },
   "dependencies": {
     "@actions/core": "^1.6.0",
