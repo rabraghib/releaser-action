@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
+    "target": "es2022",
+    "module": "NodeNext",
     "outDir": "./lib",
     "rootDir": "./src",
     "strict": true,
     "noImplicitAny": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "newLine": "lf",
+    "types": [
+      "node"
+    ]
   },
   "exclude": [
     "node_modules",

@@ -3,42 +3,55 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - run: yarn && yarn build
-
-      - name: commit changes
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24.22.1"
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm audit --audit-level=low
+      - name: Commit packaged action
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore(build): build and package action" || true
-          git push origin main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- dist
+          if ! git diff --cached --quiet -- dist; then
+            git commit -m "chore(build): build and package action" -- dist
+            git push origin main
+          fi
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7.0.1
         with:
-          ref: "main"
-
+          ref: main
+          persist-credentials: false
       - name: Generate changelog and bump version
         id: changelog
         uses: ./
         with:
-          bump-files: '**/package.json'
+          bump-files: |
+            package.json
+            package-lock.json
           extra-tags: |
             v{major}
             v{major}.{minor}
-
-      - uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v3.0.3
         if: steps.changelog.outputs.released == 'true'
-        id: release
         with:
           name: "Releaser ${{ steps.changelog.outputs.tag }}"
           tag_name: ${{ steps.changelog.outputs.tag }}

@@ -1,8 +1,8 @@
 name: "Releaser Action"
-description: ""
+description: "Generate a changelog and bump version files"
 inputs:
   token:
-    description: "Github token"
+    description: "GitHub token with contents: write permission"
     required: false
     default: ${{ github.token }}
 
@@ -41,7 +41,7 @@ inputs:
     default: "v"
 
   release-count:
-    description: "The number of releases to create"
+    description: "Changelog sections to generate, including the new release; 0 regenerates all history"
     required: false
     default: "0"
 
@@ -54,11 +54,11 @@ outputs:
     description: "The name of the created tag"
   release_notes:
     description: "The release notes"
-  version: # id of output
-    description: "The version we greeted you"
+  version:
+    description: "The published version"
   released:
-    description: "boolean to check if this step have been skipped"
+    description: "Whether a release was published"
 
 runs:
-  using: "node16"
+  using: "node24"
   main: "dist/index.js"

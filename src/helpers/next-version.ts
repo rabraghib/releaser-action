@@ -1,5 +1,8 @@
 import { DateTime } from "luxon";
 
+export type ReleaseType = "major" | "minor" | "patch";
+type Variables = Record<string, number>;
+
 interface IVersion {
   curr: string;
   pattern: string;
@@ -7,88 +10,167 @@ interface IVersion {
   extraTags: string[];
 }
 
+const variableNames = [
+  "major",
+  "minor",
+  "patch",
+  "years",
+  "months",
+  "days",
+  "bump",
+];
+
+export function versionPattern(
+  pattern: string,
+  alias = false,
+): { regex: RegExp; variables: string[] } {
+  const allowed = alias ? /^[\w.{}+\/-]+$/ : /^[\w.{}+-]+$/;
+  if (!pattern || pattern.length > 200 || !allowed.test(pattern)) {
+    throw new Error("Invalid version pattern (maximum 200 characters)");
+  }
+  if (!alias && /\}\{|\}[0-9]|[0-9]\{/.test(pattern)) {
+    throw new Error(
+      "Numeric placeholders must be separated by a nonnumeric literal",
+    );
+  }
+  if (/[{}]/.test(pattern.replace(/\{([^{}]+)\}/g, ""))) {
+    throw new Error("Malformed version placeholder");
+  }
+
+  const variables: string[] = [];
+  const escape = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let source = "";
+  let end = 0;
+  for (const match of pattern.matchAll(/\{([^{}]+)\}/g)) {
+    const name = match[1];
+    if (!variableNames.includes(name) || variables.includes(name)) {
+      throw new Error(`Unknown or repeated version placeholder: ${name}`);
+    }
+    source += escape(pattern.slice(end, match.index)) + "(0|[1-9][0-9]{0,15})";
+    variables.push(name);
+    end = match.index + match[0].length;
+  }
+  return {
+    regex: new RegExp(`^${source}${escape(pattern.slice(end))}$`),
+    variables,
+  };
+}
+
 export const getNextVersion = (
   version: IVersion,
-  type?: "major" | "minor" | "patch"
+  type: ReleaseType = "patch",
+  now = DateTime.utc(),
 ): [string, string[]] => {
-  const variables: {
-    [key: string]: number;
-  } = prepareVars(version, type);
-  variables["bump"] = getBump(version, variables);
+  const pattern = versionPattern(version.pattern);
+  const match = pattern.regex.exec(version.curr);
+  if (
+    !version.curr ||
+    version.curr.length > 200 ||
+    (pattern.variables.length && !match)
+  ) {
+    throw new Error(
+      `Current version ${version.curr.slice(0, 200)} does not match pattern ${version.pattern}`,
+    );
+  }
+  const previous = Object.fromEntries(
+    pattern.variables.map((name, index) => [name, Number(match![index + 1])]),
+  );
+  const variables = prepareVars(version, previous, type, now);
+  variables.bump = getBump(previous, variables, pattern.variables);
+  if (
+    Object.values(variables).some(
+      (value) => !Number.isSafeInteger(value) || value < 0,
+    )
+  ) {
+    throw new Error("Version components must be nonnegative safe integers");
+  }
   return [
     replaceVars(version.pattern, variables),
-    version.extraTags.map((tag) => replaceVars(tag, variables)),
+    version.extraTags.map((tag) => replaceVars(tag, variables, true)),
   ];
 };
 
-function replaceVars(version: string, vars: { [key: string]: number }) {
-  return version.replace(/\{(.*?)\}/g, (match, p1) => {
-    return `${vars[p1] ?? 0}`;
-  });
+function replaceVars(
+  template: string,
+  variables: Variables,
+  alias = false,
+): string {
+  versionPattern(template, alias);
+  const result = template.replace(/\{([^{}]+)\}/g, (_, name: string) =>
+    String(variables[name]),
+  );
+  if (result.length > 200)
+    throw new Error("Rendered version/tag exceeds 200 characters");
+  return result;
 }
 
-function getBump(version: IVersion, vars: { [key: string]: number }) {
-  const rest = version.pattern
-    .split(".")
-    .map((v) => {
-      if (v.startsWith("{") && v.endsWith("}")) {
-        return v.slice(1, -1);
-      }
-      return "";
-    })
-    .some((v) => {
-      return (
-        vars[v] &&
-        getVarValue(version, v) &&
-        vars[v] !== getVarValue(version, v)
-      );
-    });
-  return rest ? 0 : getVarValue(version, "bump") + 1;
+function getBump(
+  previous: Variables,
+  variables: Variables,
+  names: string[],
+): number {
+  const changed = names.some(
+    (name) => name !== "bump" && variables[name] !== previous[name],
+  );
+  return changed ? 0 : (previous.bump ?? 0) + 1;
 }
 
-function prepareVars(version: IVersion, type?: string) {
-  const age = DateTime.now()
-    .setZone("UTC")
-    .diff(
-      DateTime.fromISO(version.birthday, {
-        zone: "UTC",
-      }),
-      ["years", "months", "days"]
-    )
-    .toObject();
-  const vars = {
-    major: getVarValue(version, "major"),
-    minor: getVarValue(version, "minor"),
-    patch: getVarValue(version, "patch"),
-    years: Math.floor(age.years ?? 0),
-    months: Math.floor(age.months ?? 0),
-    days: Math.floor(age.days ?? 0),
-  };
+function prepareVars(
+  version: IVersion,
+  previous: Variables,
+  type: ReleaseType,
+  now: DateTime,
+): Variables {
+  const variables = Object.fromEntries(
+    variableNames.map((name) => [name, previous[name] ?? 0]),
+  );
   switch (type) {
     case "major":
-      vars.major += 1;
-      vars.minor = 0;
-      vars.patch = 0;
+      variables.major += 1;
+      variables.minor = 0;
+      variables.patch = 0;
       break;
-
     case "minor":
-      vars.minor += 1;
-      vars.patch = 0;
+      variables.minor += 1;
+      variables.patch = 0;
       break;
-
     default:
-      vars.patch += 1;
+      variables.patch += 1;
   }
-  return vars;
-}
 
-function getVarValue(version: IVersion, name: string): number {
-  const values = version.curr.split(".").map(Number);
-  const vars = version.pattern.split(".").map((v) => {
-    if (v.startsWith("{") && v.endsWith("}")) {
-      return v.slice(1, -1);
+  if (!version.pattern.includes("{")) {
+    const explicit =
+      /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+].*)?$/.exec(
+        version.pattern,
+      );
+    if (explicit) {
+      [variables.major, variables.minor, variables.patch] = explicit
+        .slice(1, 4)
+        .map(Number);
     }
-    return "-";
-  });
-  return values[vars.findIndex((v) => v === name)];
+  }
+  if (
+    [version.pattern, ...version.extraTags].some((template) =>
+      /\{(years|months|days)\}/.test(template),
+    )
+  ) {
+    const birthday = DateTime.fromISO(version.birthday, { zone: "UTC" });
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(version.birthday) ||
+      !birthday.isValid ||
+      birthday > now
+    ) {
+      throw new Error(
+        "birthday must be a valid YYYY-MM-DD date in the past or today",
+      );
+    }
+    const units = ["years", "months", "days"] as const;
+    const age = now
+      .startOf("day")
+      .diff(birthday, [...units])
+      .toObject();
+    for (const unit of units) variables[unit] = Math.floor(age[unit] ?? 0);
+  }
+  return variables;
 }
